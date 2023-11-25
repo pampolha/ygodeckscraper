@@ -25,7 +25,14 @@ async function getDecks(browser: Browser, limit: number) {
   while (deckUrls.length < limit) {
     deckUrls.push(...(await collectUrls(page)));
     await page.click("#pagination-elem > ul > li.page-item.prevDeck > a");
-    await page.waitForNetworkIdle();
+    try {
+      await page.waitForSelector("div.deck_article-card-container > a", {
+        visible: true,
+      });
+    } catch {
+      console.log("Did not find any decks in the page. Ending search loop.");
+      break;
+    }
   }
   await page.close();
   if (deckUrls.length > limit) return deckUrls.slice(0, limit);
@@ -78,7 +85,7 @@ async function downloadDecks(
 
 Puppeteer.launch().then(async (browser) => {
   // @ts-ignore
-  const deckLimit = (await argv.limit) || 500;  
+  const deckLimit = (await argv.limit) || 500;
   const decks = await getDecks(browser, deckLimit);
   console.log(`Got ${decks.length} decks, attempting to download them...`);
   const downloaded = await downloadDecks(browser, decks);
