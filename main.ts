@@ -40,14 +40,18 @@ const downloadDeck = async (
   downloadedUrlArray: string[],
   folderName = "decks"
 ) => {
-  const page = await browser.newPage();
-  await configureDownloadBehaviour(page, folderName);
-  await page.goto(url, { waitUntil: "networkidle0" });
-  await page.click("#dropdownMenuButton");
-  await page.click('a[onclick~="downloadYDK()"]');
-  await page.waitForNetworkIdle({ timeout: 5000 });
-  await page.close();
-  downloadedUrlArray.push(url);
+  try {
+    const page = await browser.newPage();
+    await configureDownloadBehaviour(page, folderName);
+    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.click("#dropdownMenuButton");
+    await page.click('a[onclick~="downloadYDK()"]');
+    await page.waitForNetworkIdle({ timeout: 5000 });
+    await page.close();
+    downloadedUrlArray.push(url);
+  } catch (err) {
+    console.error(`Error occurred while downloading deck: ${url}.\n${err}`);
+  }
 };
 
 async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
@@ -56,18 +60,23 @@ async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
   const page = await browser.newPage();
   await page.goto(deckSourceUrl, { waitUntil: "networkidle0" });
   while (deckUrlArray.length < limit) {
-    const pageDeckUrlArray = await collectPageLinks(page);
-    deckUrlArray.push(...pageDeckUrlArray);
-    for (const url of pageDeckUrlArray) {
-      cluster.queue(async () => downloadDeck(browser, url, downloadedUrlArray));
-    }
-    await page.click("#pagination-elem > ul > li.page-item.prevDeck > a");
     try {
+      const pageDeckUrlArray = await collectPageLinks(page);
+      deckUrlArray.push(...pageDeckUrlArray);
+      for (const url of pageDeckUrlArray) {
+        cluster.queue(async () =>
+          downloadDeck(browser, url, downloadedUrlArray)
+        );
+      }
+      await page.click("#pagination-elem > ul > li.page-item.prevDeck > a");
+
       await page.waitForSelector("div.deck_article-card-container > a", {
         visible: true,
       });
-    } catch {
-      console.log("Did not find any decks in the page. Ending search loop.");
+    } catch (err) {
+      console.error(
+        `Error occurred while searching for decks, execution will be stopped.\n${err}`
+      );
       break;
     }
   }
