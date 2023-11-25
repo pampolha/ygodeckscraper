@@ -1,0 +1,20 @@
+{
+  "name": "ygodeckscraper",
+  "version": "1.0.0",
+  "description": "scrape ygopro master duel decks in ydk format",
+  "main": "main.ts",
+  "scripts": {
+    "start": "tsc && node main.js"
+  },
+  "author": "Gabriel Pampolha",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "puppeteer": "^21.5.2",
+    "puppeteer-cluster": "^0.23.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.32",
+    "typescript": "^5.3.2"
+  }
+}
