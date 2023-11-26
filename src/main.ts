@@ -5,6 +5,11 @@ import { hideBin } from "yargs/helpers";
 import Os from "os";
 import writeDeckToFile from "./writeFile";
 import * as Ydke from "ydke";
+import applyFilter, {
+  DeckRange,
+  SearchFilter,
+  deckRangeArray,
+} from "./searchFilter";
 
 const deckSourceUrl =
   "https://ygoprodeck.com/deck-search/?&_sft_category=master%20duel%20decks&banlist=&offset=0";
@@ -61,11 +66,18 @@ const saveDeck = async (
   }
 };
 
-async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
+async function getDecks(
+  browser: Browser,
+  cluster: Cluster,
+  limit: number,
+  filter: SearchFilter
+) {
   const deckUrlArray: string[] = [];
   const downloadedUrlArray: string[] = [];
   const page = await browser.newPage();
-  await page.goto(deckSourceUrl, { waitUntil: "networkidle0" });
+  await page.goto(deckSourceUrl + applyFilter(filter), {
+    waitUntil: "networkidle0",
+  });
   while (deckUrlArray.length < limit) {
     try {
       let pageDeckUrlArray = await collectPageLinks(page);
@@ -103,13 +115,29 @@ async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
 Puppeteer.launch().then(async (browser) => {
   const argv = await Yargs(hideBin(process.argv)).option({
     limit: { type: "number" },
+    range: {
+      type: "number",
+      choices: [0, 1, 2, 3],
+      describe: `Deck range options:\n
+      0 - All decks\n
+      1 - Featured builders\n
+      2 - High quality deck primer\n
+      3 - Premium supporter decks\n`,
+    },
+    initialDate: { type: "string" },
+    finalDate: { type: "string" },
   }).argv;
   const deckLimit = argv.limit || 500;
+  const filter: SearchFilter = {
+    deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
+    initialDate: argv.initialDate || "null",
+    finalDate: argv.finalDate || "null",
+  };
   const cluster = await Cluster.launch({
     concurrency: Cluster.CONCURRENCY_CONTEXT,
     maxConcurrency: Os.cpus().length,
   });
-  const decks = await getDecks(browser, cluster, deckLimit);
+  const decks = await getDecks(browser, cluster, deckLimit, filter);
   await cluster.idle();
   let failedArray = findFailedDownloads(decks.deckUrls, decks.downloaded);
 

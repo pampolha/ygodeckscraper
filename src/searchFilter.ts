@@ -6,6 +6,7 @@ export enum DeckRange {
   HighQualityDeckPrimer = "deckprimer",
   PremiumSupporterDecks = "premium",
 }
+export const deckRangeArray = Object.values(DeckRange);
 
 type DateRange = string;
 export function parseDate(date: string): DateRange {
