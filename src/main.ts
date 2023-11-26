@@ -39,8 +39,8 @@ const saveDeck = async (
   downloadedUrlArray: string[],
   folderName = "decks"
 ) => {
+  const page = await browser.newPage();
   try {
-    const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
     await page.waitForSelector("div.deck-metadata-container.deck-bgimg > h1");
     const deckName = await page.evaluate(
@@ -67,6 +67,7 @@ const saveDeck = async (
     await page.close();
     downloadedUrlArray.push(url);
   } catch (err) {
+    if (page) await page.close();
     console.error(`Error occurred while downloading deck: ${url}.\n${err}`);
   }
 };

@@ -1,14 +1,9 @@
 import { writeFile, mkdir } from "fs/promises";
+import { TypedDeck } from "ydke";
 import Path from "path";
 
-interface Deck {
-  main: Uint32Array;
-  extra: Uint32Array;
-  side: Uint32Array;
-}
-
 async function writeDeckToFile(
-  deck: Deck,
+  deck: TypedDeck,
   folderName: string,
   fileName: string
 ) {
@@ -24,7 +19,7 @@ async function writeDeckToFile(
   ydkContent += deck.side.join("\n") + "\n";
 
   await mkdir(folderName, { recursive: true });
-  await writeFile(
+  return await writeFile(
     `${Path.resolve(
       folderName,
       fileName.trim().replace(/[<>:"\/\\|?*\x00-\x1F]/g, "s")
