@@ -1,7 +1,5 @@
 import Puppeteer, { Browser, Page } from "puppeteer";
 import { Cluster } from "puppeteer-cluster";
-import Yargs from "yargs/yargs";
-import { hideBin } from "yargs/helpers";
 import Os from "os";
 import writeDeckToFile from "./writeFile";
 import * as Ydke from "ydke";
@@ -11,6 +9,7 @@ import applyFilter, {
   deckRangeArray,
   parseDate,
 } from "./searchFilter";
+import loadArguments from "./arguments";
 
 const deckSourceUrl =
   "https://ygoprodeck.com/deck-search/?&_sft_category=master%20duel%20decks&banlist=&offset=0";
@@ -115,20 +114,7 @@ async function getDecks(
 
 Puppeteer.launch().then(async (browser) => {
   try {
-    const argv = await Yargs(hideBin(process.argv)).option({
-      limit: { type: "number" },
-      range: {
-        type: "number",
-        choices: [0, 1, 2, 3],
-        describe: `Deck range options:\n
-      0 - All decks\n
-      1 - Featured builders\n
-      2 - High quality deck primer\n
-      3 - Premium supporter decks\n`,
-      },
-      initialDate: { type: "string" },
-      finalDate: { type: "string" },
-    }).argv;
+    const argv = await loadArguments();
     const deckLimit = argv.limit || 500;
     const filter: SearchFilter = {
       deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
