@@ -104,7 +104,7 @@ async function getDecks(
       await page.waitForSelector("div.deck_article-card-container > a");
     } catch (err) {
       console.error(
-        `Error occurred while searching for decks, execution will be stopped.\n${err}`
+        `Error occurred while searching for decks, stopping deck search.\n${err}`
       );
       break;
     }
