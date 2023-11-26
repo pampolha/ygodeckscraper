@@ -1,8 +1,8 @@
 Execution example:
 
-`npm run start -- --limit=200` -> *fetches 200 decks*
+`npm run start -- --limit=200 --range 2 --initialDate 2023-01-01 --finalDate 2024-01-01` -> *fetches 200 decks, from the "high quality deck primer" range, that have been created between 2023 and 2024*
 
-*not passing any arguments will default to 500 decks*
+Running `npm run start -- --help` displays arguments descriptions.
 
 ---
 The scraper will save decks "on-the-fly". The deck-scraping will be parallel to to other decks being scraped and concurrent to the deck search/crawl.
