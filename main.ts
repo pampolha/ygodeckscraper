@@ -100,7 +100,7 @@ async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
   };
 }
 
-Puppeteer.launch().then(async (browser) => {
+Puppeteer.launch({ headless: false }).then(async (browser) => {
   const argv = await Yargs(hideBin(process.argv)).option({
     limit: { type: "number" },
   }).argv;
