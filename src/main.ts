@@ -113,45 +113,52 @@ async function getDecks(
 }
 
 Puppeteer.launch().then(async (browser) => {
-  const argv = await Yargs(hideBin(process.argv)).option({
-    limit: { type: "number" },
-    range: {
-      type: "number",
-      choices: [0, 1, 2, 3],
-      describe: `Deck range options:\n
+  try {
+    const argv = await Yargs(hideBin(process.argv)).option({
+      limit: { type: "number" },
+      range: {
+        type: "number",
+        choices: [0, 1, 2, 3],
+        describe: `Deck range options:\n
       0 - All decks\n
       1 - Featured builders\n
       2 - High quality deck primer\n
       3 - Premium supporter decks\n`,
-    },
-    initialDate: { type: "string" },
-    finalDate: { type: "string" },
-  }).argv;
-  const deckLimit = argv.limit || 500;
-  const filter: SearchFilter = {
-    deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
-    initialDate: argv.initialDate || "null",
-    finalDate: argv.finalDate || "null",
-  };
-  const cluster = await Cluster.launch({
-    concurrency: Cluster.CONCURRENCY_CONTEXT,
-    maxConcurrency: Os.cpus().length,
-  });
-  const decks = await getDecks(browser, cluster, deckLimit, filter);
-  await cluster.idle();
-  let failedArray = findFailedDownloads(decks.deckUrls, decks.downloaded);
+      },
+      initialDate: { type: "string" },
+      finalDate: { type: "string" },
+    }).argv;
+    const deckLimit = argv.limit || 500;
+    const filter: SearchFilter = {
+      deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
+      initialDate: argv.initialDate || "null",
+      finalDate: argv.finalDate || "null",
+    };
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_CONTEXT,
+      maxConcurrency: Os.cpus().length,
+    });
+    const decks = await getDecks(browser, cluster, deckLimit, filter);
+    await cluster.idle();
+    let failedArray = findFailedDownloads(decks.deckUrls, decks.downloaded);
 
-  while (failedArray.length) {
-    const retryArray: string[] = [];
-    console.log(`${failedArray.length} decks failed to download, retrying...`);
-    for (const deck of failedArray) {
-      await cluster.queue(async () => saveDeck(browser, deck, retryArray));
+    while (failedArray.length) {
+      const retryArray: string[] = [];
+      console.log(
+        `${failedArray.length} decks failed to download, retrying...`
+      );
+      for (const deck of failedArray) {
+        await cluster.queue(async () => saveDeck(browser, deck, retryArray));
+      }
+      await cluster.idle();
+      failedArray = findFailedDownloads(failedArray, retryArray);
     }
     await cluster.idle();
-    failedArray = findFailedDownloads(failedArray, retryArray);
+    await cluster.close();
+    console.log("Downloaded all decks");
+    await browser.close();
+  } catch (err) {
+    if (browser) await browser.close();
+    throw err;
   }
-  await cluster.idle();
-  await cluster.close();
-  console.log("Downloaded all decks");
-  await browser.close();
 });
