@@ -15,6 +15,7 @@ const deckSourceUrl =
   "https://ygoprodeck.com/deck-search/?&_sft_category=master%20duel%20decks&banlist=&offset=0";
 
 const collectPageLinks = async (page: Page) => {
+  await page.waitForSelector("div.deck_article-card-container > a");
   return await page.evaluate(() => {
     const anchorList = document.querySelectorAll(
       "div.deck_article-card-container > a"
@@ -41,10 +42,14 @@ const saveDeck = async (
   try {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
+    await page.waitForSelector("div.deck-metadata-container.deck-bgimg > h1");
     const deckName = await page.evaluate(
       () =>
         document.querySelector("div.deck-metadata-container.deck-bgimg > h1")
           ?.textContent
+    );
+    await page.waitForSelector(
+      "div.deck-metadata-container.deck-bgimg > div:nth-child(2) > span > a:nth-child(2)"
     );
     const deckAuthor = await page.evaluate(
       () =>
@@ -95,9 +100,7 @@ async function getDecks(
       }
       await page.click("#pagination-elem > ul > li.page-item.prevDeck > a");
 
-      await page.waitForSelector("div.deck_article-card-container > a", {
-        visible: true,
-      });
+      await page.waitForSelector("div.deck_article-card-container > a");
     } catch (err) {
       console.error(
         `Error occurred while searching for decks, execution will be stopped.\n${err}`
