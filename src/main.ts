@@ -86,14 +86,9 @@ async function getDecks(
   });
   while (deckUrlArray.length < limit) {
     try {
-      let pageDeckUrlArray = await collectPageLinks(page);
-      if (pageDeckUrlArray.length + deckUrlArray.length > limit) {
-        pageDeckUrlArray = pageDeckUrlArray.slice(
-          0,
-          deckUrlArray.length + pageDeckUrlArray.length - limit
-        );
-      }
+      const pageDeckUrlArray = await collectPageLinks(page);
       deckUrlArray.push(...pageDeckUrlArray);
+      if (deckUrlArray.length > limit) deckUrlArray.splice(limit);
       for (const url of pageDeckUrlArray) {
         await cluster.queue(async () =>
           saveDeck(browser, url, downloadedUrlArray)
