@@ -25,10 +25,10 @@ async function writeDeckToFile(
 
   await mkdir(folderName, { recursive: true });
   await writeFile(
-    Path.resolve(
+    `${Path.resolve(
       folderName,
       fileName.trim().replace(/[<>:"\/\\|?*\x00-\x1F]/g, "s")
-    ),
+    )}.ydk`,
     ydkContent,
     {
       flag: "wx",
