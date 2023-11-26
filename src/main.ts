@@ -9,6 +9,7 @@ import applyFilter, {
   DeckRange,
   SearchFilter,
   deckRangeArray,
+  parseDate,
 } from "./searchFilter";
 
 const deckSourceUrl =
@@ -131,8 +132,8 @@ Puppeteer.launch().then(async (browser) => {
     const deckLimit = argv.limit || 500;
     const filter: SearchFilter = {
       deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
-      initialDate: argv.initialDate || "null",
-      finalDate: argv.finalDate || "null",
+      initialDate: argv.initialDate ? parseDate(argv.initialDate) : "null",
+      finalDate: argv.finalDate ? parseDate(argv.finalDate) : "null",
     };
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_CONTEXT,

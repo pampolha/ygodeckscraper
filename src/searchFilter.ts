@@ -10,11 +10,16 @@ export const deckRangeArray = Object.values(DeckRange);
 
 type DateRange = string;
 export function parseDate(date: string): DateRange {
-  if (!isValid(date)) {
-    throw new Error(`Date ${date} is not a valid date`);
+  if (!/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(date)) {
+    throw new Error(
+      `Date ${date} is not a valid date. Use the yyyy-MM-dd format`
+    );
   }
   const isoDate = parseISO(date);
-  return format(isoDate, "YYYY-MM-DD");
+  if (!isValid(isoDate)) {
+    throw new Error(`Date ${date} is not a valid date.`);
+  }
+  return format(isoDate, "yyyy-MM-dd");
 }
 
 export interface SearchFilter {
