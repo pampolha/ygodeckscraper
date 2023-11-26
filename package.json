@@ -4,7 +4,7 @@
   "description": "scrape ygopro master duel decks in ydk format",
   "main": "main.ts",
   "scripts": {
-    "start": "tsc && node main.js"
+    "start": "tsc && node out/main.js"
   },
   "author": "Gabriel Pampolha",
   "license": "GPL-3.0-or-later",
