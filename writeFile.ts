@@ -31,7 +31,7 @@ async function writeDeckToFile(
     )}.ydk`,
     ydkContent,
     {
-      flag: "wx",
+      flag: "w",
     }
   );
 }
