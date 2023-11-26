@@ -1,10 +1,15 @@
 import Puppeteer, { Browser, Page } from "puppeteer";
 import { Cluster } from "puppeteer-cluster";
-import Yargs from "yargs/yargs";
-import { hideBin } from "yargs/helpers";
 import Os from "os";
 import writeDeckToFile from "./writeFile";
 import * as Ydke from "ydke";
+import applyFilter, {
+  DeckRange,
+  SearchFilter,
+  deckRangeArray,
+  parseDate,
+} from "./searchFilter";
+import loadArguments from "./arguments";
 
 const deckSourceUrl =
   "https://ygoprodeck.com/deck-search/?&_sft_category=master%20duel%20decks&banlist=&offset=0";
@@ -61,11 +66,18 @@ const saveDeck = async (
   }
 };
 
-async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
+async function getDecks(
+  browser: Browser,
+  cluster: Cluster,
+  limit: number,
+  filter: SearchFilter
+) {
   const deckUrlArray: string[] = [];
   const downloadedUrlArray: string[] = [];
   const page = await browser.newPage();
-  await page.goto(deckSourceUrl, { waitUntil: "networkidle0" });
+  await page.goto(deckSourceUrl + applyFilter(filter), {
+    waitUntil: "networkidle0",
+  });
   while (deckUrlArray.length < limit) {
     try {
       let pageDeckUrlArray = await collectPageLinks(page);
@@ -101,29 +113,39 @@ async function getDecks(browser: Browser, cluster: Cluster, limit: number) {
 }
 
 Puppeteer.launch().then(async (browser) => {
-  const argv = await Yargs(hideBin(process.argv)).option({
-    limit: { type: "number" },
-  }).argv;
-  const deckLimit = argv.limit || 500;
-  const cluster = await Cluster.launch({
-    concurrency: Cluster.CONCURRENCY_CONTEXT,
-    maxConcurrency: Os.cpus().length,
-  });
-  const decks = await getDecks(browser, cluster, deckLimit);
-  await cluster.idle();
-  let failedArray = findFailedDownloads(decks.deckUrls, decks.downloaded);
+  try {
+    const argv = await loadArguments();
+    const deckLimit = argv.limit || 500;
+    const filter: SearchFilter = {
+      deckRange: argv.range ? deckRangeArray[argv.range] : DeckRange.AllDecks,
+      initialDate: argv.initialDate ? parseDate(argv.initialDate) : "null",
+      finalDate: argv.finalDate ? parseDate(argv.finalDate) : "null",
+    };
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_CONTEXT,
+      maxConcurrency: Os.cpus().length,
+    });
+    const decks = await getDecks(browser, cluster, deckLimit, filter);
+    await cluster.idle();
+    let failedArray = findFailedDownloads(decks.deckUrls, decks.downloaded);
 
-  while (failedArray.length) {
-    const retryArray: string[] = [];
-    console.log(`${failedArray.length} decks failed to download, retrying...`);
-    for (const deck of failedArray) {
-      await cluster.queue(async () => saveDeck(browser, deck, retryArray));
+    while (failedArray.length) {
+      const retryArray: string[] = [];
+      console.log(
+        `${failedArray.length} decks failed to download, retrying...`
+      );
+      for (const deck of failedArray) {
+        await cluster.queue(async () => saveDeck(browser, deck, retryArray));
+      }
+      await cluster.idle();
+      failedArray = findFailedDownloads(failedArray, retryArray);
     }
     await cluster.idle();
-    failedArray = findFailedDownloads(failedArray, retryArray);
+    await cluster.close();
+    console.log("Downloaded all decks");
+    await browser.close();
+  } catch (err) {
+    if (browser) await browser.close();
+    throw err;
   }
-  await cluster.idle();
-  await cluster.close();
-  console.log("Downloaded all decks");
-  await browser.close();
 });
