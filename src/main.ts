@@ -25,14 +25,6 @@ const collectPageLinks = async (page: Page) => {
   });
 };
 
-const findFailedDownloads = (decks: string[], downloaded: string[]) => {
-  const failed = [];
-  for (const deck of decks) {
-    if (!downloaded.some((down) => down === deck)) failed.push(deck);
-  }
-  return failed;
-};
-
 const saveDeck = async (page: Page, url: string, folderName = "decks") => {
   try {
     await page.goto(url, { waitUntil: "networkidle0" });
@@ -98,7 +90,7 @@ async function getDecks(
   }
 }
 
-Puppeteer.launch({ headless: false }).then(async (browser) => {
+Puppeteer.launch().then(async (browser) => {
   try {
     const argv = await loadArguments();
     const deckLimit = argv.limit || 500;
