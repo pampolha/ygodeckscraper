@@ -43,12 +43,13 @@ const saveDeck = async (page: Page, url: string, folderName = "decks") => {
           "div.deck-metadata-container.deck-bgimg > div:nth-child(2) > span > a:nth-child(2)"
         )?.textContent
     );
+    const deckIdentifier = url.match(/\d+$/)?.[0] || 'noIdentifier';
     // @ts-ignore
     const ydke = (await page.evaluate(() => createYdkeUri())) as string;
     await writeDeckToFile(
       Ydke.parseURL(ydke),
       folderName,
-      `${deckName} - ${deckAuthor}`
+      `${deckName} - ${deckAuthor} - ${deckIdentifier}`
     );
     await page.close();
   } catch (err) {
