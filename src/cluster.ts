@@ -7,7 +7,7 @@ const loadCluster = async (
     | number
     | ConcurrencyImplementationClassType = Cluster.CONCURRENCY_CONTEXT,
   maxConcurrency = Os.cpus().length,
-  retryLimit = 3,
+  retryLimit = 2,
   retryDelay = 5000,
   workerCreationDelay = 1000
 ) => {
@@ -25,7 +25,7 @@ const loadCluster = async (
       );
     } else {
       console.error(
-        `Failed to save deck ${data}: ${err.message}.\nMaximum attempts reached`
+        `Failed to save deck ${data}: ${err.message}.\nMaximum attempts for this job reached`
       );
     }
   });
